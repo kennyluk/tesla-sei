@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla SEI Explorer - Visual Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0e0e0e;
+            --glass-bg: rgba(14, 14, 14, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-blue: #00e5ff;
+            --accent-red: #ff3d00;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('tesla_dashcam_sample_1766257476887.png');
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+        }
+
+        .hud-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 0;
+            pointer-events: none;
+        }
+
+        /* Side Telemetry Cards */
+        .side-telemetry {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 20px;
+            pointer-events: auto;
+        }
+
+        .side-telemetry.left {
+            left: 20px;
+        }
+
+        .side-telemetry.right {
+            right: 20px;
+        }
+
+        .telemetry-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            min-width: 160px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .telemetry-label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .telemetry-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent-red);
+        }
+
+        /* G-Ball UI */
+        .gball-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .gball-container {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .gball-crosshair-x,
+        .gball-crosshair-y {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .gball-crosshair-x {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            left: 0;
+        }
+
+        .gball-crosshair-y {
+            height: 100%;
+            width: 1px;
+            left: 50%;
+            top: 0;
+        }
+
+        .gball-ball {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-red);
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 0 10px var(--accent-red);
+            transition: transform 0.1s ease-out;
+            z-index: 5;
+        }
+
+        .gball-values {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            align-items: center;
+            min-width: 50px;
+        }
+
+        .gball-val-row {
+            font-size: 8px;
+            font-weight: 700;
+            color: var(--accent-red);
+            font-family: 'Outfit', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .gball-header {
+            font-size: 8px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        /* Horizontal Compass Tape UI */
+        .compass-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            position: relative;
+        }
+
+        .compass-window {
+            width: 140px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+
+        .compass-tape {
+            display: flex;
+            height: 100%;
+            position: absolute;
+            left: 50%;
+            /* Center the tape start */
+            transition: transform 0.1s linear;
+            will-change: transform;
+        }
+
+        .tape-segment {
+            display: flex;
+            align-items: flex-end;
+            gap: 20px;
+            /* Space between marks */
+            padding: 0 10px;
+            height: 100%;
+        }
+
+        .tape-mark {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            min-width: 40px;
+            height: 100%;
+            padding-bottom: 4px;
+        }
+
+        .mark-line {
+            width: 1px;
+            height: 8px;
+            background: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .mark-text {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .mark-cardinal {
+            color: var(--accent-red);
+            font-weight: 800;
+        }
+
+        .compass-center-marker {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 2px;
+            height: 100%;
+            background: var(--accent-red);
+            transform: translateX(-50%);
+            z-index: 10;
+            box-shadow: 0 0 8px var(--accent-red);
+        }
+
+        .compass-degree-top {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent-blue);
+            font-family: 'Outfit', sans-serif;
+            text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
+            margin-bottom: -2px;
+        }
+
+        /* Bottom HUD Bar */
+        .bottom-bar {
+            width: 100%;
+            height: 80px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            pointer-events: auto;
+        }
+
+        .hud-section {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex: 1;
+        }
+
+        .hud-section.left {
+            justify-content: flex-start;
+        }
+
+        .hud-section.center {
+            justify-content: center;
+            flex: 1.2;
+        }
+
+        .hud-section.right {
+            justify-content: flex-end;
+        }
+
+        /* Pedal Icons */
+        .pedal-container {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .brake-pedal {
+            width: 44px;
+            height: 32px;
+        }
+
+        .accel-pedal {
+            width: 24px;
+            height: 48px;
+        }
+
+        .pedal-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            transition: height 0.1s ease;
+        }
+
+        .brake-fill {
+            background: linear-gradient(to top, var(--accent-red), #ff7043);
+            box-shadow: 0 0 15px var(--accent-red);
+        }
+
+        .accel-fill {
+            background: linear-gradient(to top, var(--accent-blue), #80deea);
+            box-shadow: 0 0 15px var(--accent-blue);
+        }
+
+        .pedal-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            z-index: 2;
+            pointer-events: none;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .gear-indicator {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            min-width: 20px;
+        }
+
+        /* Center Section: Speed & Blinkers */
+        .speed-display {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .blinker {
+            font-size: 28px;
+            color: var(--text-secondary);
+            opacity: 0.2;
+            transition: opacity 0.2s;
+        }
+
+        .blinker.active {
+            color: #4caf50;
+            opacity: 1;
+            text-shadow: 0 0 10px #4caf50;
+        }
+
+        .speed-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 42px;
+            font-weight: 700;
+            line-height: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .speed-unit {
+            font-size: 12px;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+            margin-top: -4px;
+        }
+
+        /* Right Section: Steering */
+        .steering-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .steering-wheel-icon {
+            width: 36px;
+            height: 36px;
+            border: 2px solid var(--text-primary);
+            border-radius: 50%;
+            position: relative;
+            opacity: 0.8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .steering-wheel-icon::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--text-primary);
+            transform: translateY(-50%);
+        }
+
+        .steering-wheel-icon::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            height: 50%;
+            background: var(--text-primary);
+            transform: translateX(-50%);
+        }
+
+        .steering-angle {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--accent-blue);
+            font-family: 'Outfit', sans-serif;
+            text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
+        }
+
+        /* Top Info (Minimal) */
+        .top-info {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px;
+        }
+
+        .info-pill {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="background"></div>
+
+    <div class="hud-container">
+        <!-- Top Info -->
+        <div class="top-info">
+            <div class="info-pill">AUTOPILOT ENGAGED</div>
+            <div class="info-pill" id="gpsValue">34.24, -84.21</div>
+        </div>
+
+        <!-- Side Telemetry (Right Only) -->
+        <div class="side-telemetry right">
+            <!-- Acceleration cards removed, now in bottom bar -->
+        </div>
+
+        <!-- Bottom HUD Bar -->
+        <div class="bottom-bar">
+            <!-- Left: Brake, Gear, G-Ball -->
+            <div class="hud-section left">
+                <div class="pedal-container brake-pedal">
+                    <div class="pedal-fill brake-fill" id="brakeFill"></div>
+                    <div class="pedal-label">Brake</div>
+                </div>
+                <div class="gear-indicator">D</div>
+
+                <div class="gball-wrapper">
+                    <div class="gball-container">
+                        <div class="gball-crosshair-x"></div>
+                        <div class="gball-crosshair-y"></div>
+                        <div class="gball-ball" id="gballBall"></div>
+                    </div>
+                    <div class="gball-values">
+                        <div class="gball-header">G-Forces</div>
+                        <div class="gball-val-row">X: <span id="accelX">-0.18</span></div>
+                        <div class="gball-val-row">Y: <span id="accelY">0.02</span></div>
+                        <div class="gball-val-row">Z: <span id="accelZ">0.01</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Speed & Blinkers -->
+            <div class="hud-section center">
+                <div class="speed-display">
+                    <div class="blinker left-blinker">◀</div>
+                    <div class="speed-value">
+                        29
+                        <span class="speed-unit">MPH</span>
+                    </div>
+                    <div class="blinker right-blinker">▶</div>
+                </div>
+            </div>
+
+            <!-- Right: Compass Tape, Steering & Accel -->
+            <div class="hud-section right">
+                <div class="compass-wrapper">
+                    <div class="compass-degree-top" id="headingDeg">282°</div>
+                    <div class="compass-window">
+                        <div class="compass-center-marker"></div>
+                        <div class="compass-tape" id="compassTape">
+                            <!-- Tape content generated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steering-container">
+                    <div class="steering-wheel-icon"></div>
+                    <div class="steering-angle" id="steeringAngle">0°</div>
+                </div>
+                <div class="pedal-container accel-pedal">
+                    <div class="pedal-fill accel-fill" id="accelFill"></div>
+                    <div class="pedal-label">Accel</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let speed = 29;
+        const speedText = document.querySelector('.speed-value');
+        const accelFill = document.getElementById('accelFill');
+        const brakeFill = document.getElementById('brakeFill');
+        const wheel = document.querySelector('.steering-wheel-icon');
+        const angleText = document.getElementById('steeringAngle');
+
+        const gpsText = document.getElementById('gpsValue');
+
+        const gballBall = document.getElementById('gballBall');
+        const accelXText = document.getElementById('accelX');
+        const accelYText = document.getElementById('accelY');
+        const accelZText = document.getElementById('accelZ');
+
+        const compassTape = document.getElementById('compassTape');
+        const headingDegText = document.getElementById('headingDeg');
+
+        // Generate Compass Tape Content
+        function generateTape() {
+            const marks = [];
+            // Create 3 sets of 0-360 for seamless looping
+            for (let i = -1; i <= 1; i++) {
+                for (let deg = 0; deg < 360; deg += 15) {
+                    let text = deg.toString();
+                    let isCardinal = false;
+                    if (deg === 0) { text = 'N'; isCardinal = true; }
+                    else if (deg === 90) { text = 'E'; isCardinal = true; }
+                    else if (deg === 180) { text = 'S'; isCardinal = true; }
+                    else if (deg === 270) { text = 'W'; isCardinal = true; }
+
+                    marks.push(`
+                        <div class="tape-mark" style="min-width: 60px;">
+                            <span class="mark-text ${isCardinal ? 'mark-cardinal' : ''}">${text}</span>
+                            <div class="mark-line"></div>
+                        </div>
+                    `);
+                }
+            }
+            compassTape.innerHTML = marks.join('');
+        }
+        generateTape();
+
+        const MARK_WIDTH = 60; // min-width of tape-mark
+        const TAPE_OFFSET = 360 / 15 * MARK_WIDTH; // Width of one full 360 set
+
+        function animate() {
+            const time = Date.now() / 1000;
+
+            // Randomly fluctuate speed slightly
+            if (Math.random() > 0.98) {
+                speed = 29 + (Math.random() > 0.5 ? 1 : -1);
+                speedText.innerHTML = `${speed}<span class="speed-unit">MPH</span>`;
+            }
+
+            // Simulate pedal application
+            const accelHeight = 50 + Math.sin(time * 1.5) * 15;
+            accelFill.style.height = `${accelHeight}%`;
+
+            const brakeHeight = Math.max(0, Math.sin(time * 0.8) * 20);
+            brakeFill.style.height = `${brakeHeight}%`;
+
+            // Steering wheel rotation and angle readout
+            const angle = Math.sin(time) * 15;
+            wheel.style.transform = `rotate(${angle}deg)`;
+            angleText.textContent = `${Math.round(angle)}°`;
+
+            // Simulate Telemetry Data
+            if (Math.random() > 0.9) {
+                const lat = (34.24 + Math.sin(time / 100) * 0.01).toFixed(2);
+                const lon = (-84.21 + Math.cos(time / 100) * 0.01).toFixed(2);
+                gpsText.textContent = `${lat}, ${lon}`;
+            }
+
+            // Simulate G-Ball Movement and Raw Values
+            const gx_raw = Math.sin(time * 2) * 0.5;
+            const gy_raw = Math.cos(time * 1.5) * 0.5;
+            const gz_raw = 0.01 + Math.sin(time * 10) * 0.01;
+
+            const gx = gx_raw * 50;
+            const gy = gy_raw * 50;
+            gballBall.style.transform = `translate(${gx}px, ${gy}px)`;
+
+            accelXText.textContent = gx_raw.toFixed(2);
+            accelYText.textContent = gy_raw.toFixed(2);
+            accelZText.textContent = gz_raw.toFixed(2);
+
+            // Simulate Compass Tape Movement
+            const heading = (282 + Math.sin(time / 10) * 10 + 360) % 360;
+            headingDegText.textContent = `${Math.round(heading)}°`;
+
+            // Calculate translation: 
+            // 0 degrees should be at center. 
+            // Each 15 degrees is MARK_WIDTH pixels.
+            const translateX = -(heading / 15) * MARK_WIDTH;
+            compassTape.style.transform = `translateX(${translateX}px)`;
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

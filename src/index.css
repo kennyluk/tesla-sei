@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --tesla-blue: #00e5ff;
+  --tesla-red: #ff3d00;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.glass-card {
+  @apply bg-glass-bg backdrop-blur-xl border border-glass-border rounded-3xl shadow-2xl;
+}
