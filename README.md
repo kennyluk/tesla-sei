@@ -49,7 +49,7 @@ The "Export with Overlays" feature uses a sophisticated multi-stage pipeline run
 
 This project is configured for easy hosting on GitHub Pages.
 
-1.  **GitHub Actions**: A automated workflow (`.github/workflows/deploy.yml`) is included. It will automatically build and deploy the app every time you push to the `develop` branch.
+1.  **GitHub Actions**: A automated workflow (`.github/workflows/deploy.yml`) is included. It will automatically build and deploy the app every time you push to the `master` branch.
 2.  **Repository Settings**:
     -   Go to your GitHub repository **Settings** > **Pages**.
     -   Under **Build and deployment** > **Source**, select **GitHub Actions**.
