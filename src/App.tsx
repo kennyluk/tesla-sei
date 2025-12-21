@@ -3,26 +3,51 @@ import SteeringWheel from './components/SteeringWheel'
 import Compass from './components/Compass'
 import GForceBall from './components/GForceBall'
 import FileDropzone from './components/FileDropzone'
-import { Play, Pause, ChevronLeft, Eye, EyeOff } from 'lucide-react'
-import { SeiParser, SeiBuffer, SeiMetadata } from './services/SeiParser'
+import { Play, Pause, ChevronLeft, Eye, EyeOff, Download } from 'lucide-react'
+import { SeiParser, SeiBuffer } from './services/SeiParser'
+import { SeiMetadata } from './types'
+import wheelIcon from './assets/icons/wheel.svg'
 import { useSeiSync } from './hooks/useSeiSync'
 import BrakePedal from './components/BrakePedal'
 import AcceleratorPedal from './components/AcceleratorPedal'
 
 function App() {
-    const [view, setView] = useState<'upload' | 'dashboard'>('upload')
-    const [isParsing, setIsParsing] = useState(false)
-    const [parseProgress, setParseProgress] = useState(0)
-    const [error, setError] = useState<string | null>(null)
-    const [showGps, setShowGps] = useState(true)
-    const [videoUrl, setVideoUrl] = useState<string | null>(null)
-    const [hudMetadata, setHudMetadata] = useState<SeiMetadata | null>(null)
-    const [isPlaying, setIsPlaying] = useState(true)
-    const [currentTime, setCurrentTime] = useState(0)
-    const [duration, setDuration] = useState(0)
-    const videoRef = useRef<HTMLVideoElement | null>(null)
-    const [seiBuffer, setSeiBuffer] = useState<SeiBuffer | null>(null)
-    const { metadataRef, updateSync } = useSeiSync(videoRef, seiBuffer)
+    const [file, setFile] = useState<File | null>(null);
+    const [videoUrl, setVideoUrl] = useState<string | null>(null);
+    const [seiBuffer, setSeiBuffer] = useState<SeiBuffer | null>(null);
+
+    // Parsing State
+    const [isParsing, setIsParsing] = useState(false);
+    const [parseProgress, setParseProgress] = useState(0);
+    const [error, setError] = useState<string | null>(null);
+
+    // Export State
+    const [isExporting, setIsExporting] = useState(false);
+    const [exportProgress, setExportProgress] = useState(0);
+
+    // View State
+    const [view, setView] = useState<'upload' | 'dashboard'>('upload');
+    const [showGps, setShowGps] = useState(true);
+    const [isPlaying, setIsPlaying] = useState(true);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [hudMetadata, setHudMetadata] = useState<SeiMetadata | null>(null);
+
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+    const { metadataRef, updateSync } = useSeiSync(videoRef, seiBuffer);
+
+    // Sync HUD with hook updates
+    useEffect(() => {
+        let animId: number;
+        const syncLoop = () => {
+            if (metadataRef.current) {
+                setHudMetadata(metadataRef.current);
+            }
+            animId = requestAnimationFrame(syncLoop);
+        };
+        animId = requestAnimationFrame(syncLoop);
+        return () => cancelAnimationFrame(animId);
+    }, [metadataRef]);
 
     const togglePlayback = () => {
         const video = videoRef.current
@@ -59,6 +84,70 @@ function App() {
         setCurrentTime(newTime)
         updateSync(newTime)
     }
+
+    const handleExport = async () => {
+        if (!file || !seiBuffer) return;
+        setIsExporting(true);
+        setExportProgress(0);
+        setError(null); // Clear previous errors
+
+        try {
+            // Load Assets
+            // Load Assets via HTMLImageElement to support SVG
+            const loadBitmap = (src: string) => new Promise<ImageBitmap>((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    createImageBitmap(img).then(resolve).catch(reject);
+                };
+                img.onerror = reject;
+                img.src = src;
+            });
+
+            const wheelBmp = await loadBitmap(wheelIcon);
+
+            const worker = new Worker(new URL('./workers/export.worker.ts', import.meta.url), { type: 'module' });
+
+            worker.onmessage = (e) => {
+                const { type, progress, buffer, error } = e.data;
+                if (type === 'progress') {
+                    setExportProgress(progress * 100);
+                } else if (type === 'done') {
+                    // Download
+                    const blob = new Blob([buffer], { type: 'video/mp4' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `tesla_overlay_${Date.now()}.mp4`; // Timestamped filename
+                    a.click();
+                    URL.revokeObjectURL(url);
+
+                    setIsExporting(false);
+                    worker.terminate();
+                } else if (type === 'error') {
+                    console.error('Export worker error:', error);
+                    setError('Export failed: ' + error);
+                    setIsExporting(false);
+                    worker.terminate();
+                }
+            };
+
+            worker.postMessage({
+                type: 'start',
+                file: file,
+                metadata: seiBuffer.getEntries(),
+                assets: { steeringWheel: wheelBmp },
+                config: {
+                    bitrate: 12000000,
+                    showGps: showGps
+                }
+            }, [wheelBmp]);
+
+        } catch (err: any) {
+            console.error('Export initialization failed:', err);
+            setError('Export initialization failed: ' + err.message);
+            setIsExporting(false);
+        }
+    };
 
     // Keep isPlaying state in sync with video element events
     useEffect(() => {
@@ -129,6 +218,7 @@ function App() {
         setParseProgress(0)
 
         try {
+            setFile(file);
             const buffer = await file.arrayBuffer()
             const isValid = await SeiParser.validateMp4(buffer.slice(0))
 
@@ -235,6 +325,20 @@ function App() {
 
                     {/* GPS Coordinates Toggle & Display */}
                     <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleExport}
+                            disabled={isExporting}
+                            className="pointer-events-auto flex items-center gap-2 px-4 py-2 bg-tesla-blue/20 hover:bg-tesla-blue/30 border border-tesla-blue/30 hover:border-tesla-blue/50 rounded-full text-xs font-bold uppercase tracking-widest transition-all backdrop-blur-md text-tesla-blue hover:text-[#2962FF] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isExporting ? (
+                                <div className="w-3 h-3 border-2 border-tesla-blue rounded-full border-t-transparent animate-spin" />
+                            ) : (
+                                <Download size={14} />
+                            )}
+                            {isExporting ? `${Math.round(exportProgress)}%` : 'Export'}
+                        </button>
+
+                        <div className="w-px h-8 bg-white/10 mx-2" />
                         {showGps && (
                             <div className="flex items-center gap-3 px-4 py-2 bg-glass-bg/90 border border-glass-border rounded-full shadow-lg backdrop-blur-2xl pointer-events-auto animate-in fade-in slide-in-from-right-2 duration-300">
                                 <span className="text-[11px] font-mono text-[#00E5FF] tracking-widest leading-none pt-0.5 border-r border-white/10 pr-3">
@@ -278,7 +382,7 @@ function App() {
                             <div className="w-full h-1 bg-white/20 rounded-full relative overflow-visible">
                                 <div
                                     className="h-full bg-tesla-red rounded-full relative"
-                                    style={{ width: `${(currentTime / duration) * 100}%` }}
+                                    style={{ width: `${(currentTime / duration) * 100}% ` }}
                                 >
                                     <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-md scale-0 group-hover/scrubber:scale-100 transition-transform" />
                                 </div>
@@ -288,7 +392,7 @@ function App() {
                         {/* Integrated SEQ Display */}
                         <div className="flex-shrink-0 px-3 py-1 rounded-md bg-white/5 border border-white/5">
                             <span className="text-[10px] font-mono text-white/40 tracking-widest">
-                                {hudMetadata ? `SEQ: ${hudMetadata.frameSeqNo.toString().padStart(6, '0')}` : '---'}
+                                {hudMetadata ? `SEQ: ${hudMetadata.frameSeqNo.toString().padStart(6, '0')} ` : '---'}
                             </span>
                         </div>
                     </div>

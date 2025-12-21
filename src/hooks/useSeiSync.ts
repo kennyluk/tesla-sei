@@ -1,5 +1,6 @@
 import { useEffect, useRef, MutableRefObject, useCallback } from 'react';
-import { SeiBuffer, SeiMetadata } from '../services/SeiParser';
+import { SeiBuffer } from '../services/SeiParser';
+import { SeiMetadata } from '../types';
 
 export function useSeiSync(
     videoRef: MutableRefObject<HTMLVideoElement | null>,
@@ -75,7 +76,7 @@ export function useSeiSync(
         const handleTimeUpdate = () => {
             // Only use timeupdate if requestVideoFrameCallback is not available
             if (!('requestVideoFrameCallback' in video)) {
-                updateSync(video.currentTime);
+                updateSync((video as HTMLVideoElement).currentTime);
             }
         };
 

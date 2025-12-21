@@ -1,24 +1,5 @@
 import * as MP4Box from 'mp4box';
-
-export interface SeiMetadata {
-    version: number;
-    gearState: string;
-    frameSeqNo: number;
-    vehicleSpeedMps: number;
-    acceleratorPedalPosition: number;
-    steeringWheelAngle: number;
-    blinkerOnLeft: boolean;
-    blinkerOnRight: boolean;
-    brakeApplied: boolean;
-    autopilotState: string;
-    latitudeDeg: number;
-    longitudeDeg: number;
-    headingDeg: number;
-    linearAccelerationMps2X: number;
-    linearAccelerationMps2Y: number;
-    linearAccelerationMps2Z: number;
-    timestampMs: number;
-}
+import { SeiMetadata } from '../types';
 
 export class SeiParser {
     static async validateMp4(buffer: ArrayBuffer): Promise<boolean> {
