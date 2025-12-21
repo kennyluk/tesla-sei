@@ -58,13 +58,12 @@ const AcceleratorPedal: React.FC<AcceleratorPedalProps> = ({ value = 0 }) => {
                     {/* Pedal Body Fill (Active State) */}
                     <rect
                         x="19"
-                        y="18.5"
+                        y={18.5 + (25 * (1 - clampedValue / 100))}
                         width="12"
-                        height="25"
-                        rx="4.5"
+                        height={25 * (clampedValue / 100)}
+                        rx={Math.min(4.5, (25 * (clampedValue / 100)) / 2)}
                         fill="url(#accelFillGradient)"
-                        className="transition-transform duration-75 origin-bottom"
-                        style={{ transform: `scaleY(${clampedValue / 100})` }}
+                        className="transition-all duration-75"
                     />
 
                     {/* Border for definition */}

@@ -6,6 +6,7 @@ interface SteeringWheelProps {
     blinkerOnRight?: boolean;
     brakeApplied?: boolean;
     autopilotEnabled?: boolean;
+    autopilotState?: string;
 }
 
 const SteeringWheel: React.FC<SteeringWheelProps> = ({
@@ -13,17 +14,28 @@ const SteeringWheel: React.FC<SteeringWheelProps> = ({
     blinkerOnLeft = false,
     blinkerOnRight = false,
     brakeApplied = false,
-    autopilotEnabled = false
+    autopilotEnabled = false,
+    autopilotState = 'NONE'
 }) => {
+    const getAutopilotLabel = () => {
+        switch (autopilotState) {
+            case 'TACC': return 'TACC';
+            case 'SELF_DRIVING': return 'FSD';
+            case 'AUTOSTEER': return 'Autosteer';
+            default: return null;
+        }
+    };
+
+    const label = getAutopilotLabel();
     return (
         <div className="flex flex-col items-center">
             {/* Top Zone - Standardized 24px (h-6) + 8px (mb-2) */}
-            <div className="h-6 flex items-center justify-center mb-2">
-                <div className="flex gap-3">
-                    <div className={`w-1.5 h-1.5 rounded-full transition-colors ${blinkerOnLeft ? 'bg-green-500 shadow-[0_0_8px_#10b981]' : 'bg-white/10'}`} />
-                    <div className={`w-1.5 h-1.5 rounded-full transition-colors ${brakeApplied ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-white/10'}`} />
-                    <div className={`w-1.5 h-1.5 rounded-full transition-colors ${blinkerOnRight ? 'bg-green-500 shadow-[0_0_8px_#10b981]' : 'bg-white/10'}`} />
-                </div>
+            <div className="h-6 flex items-end justify-center mb-2">
+                {label && (
+                    <span className="text-[9px] font-bold text-[#2962FF] uppercase tracking-[0.2em] leading-none">
+                        {label}
+                    </span>
+                )}
             </div>
 
             {/* Wheel Container - Fixed 64px (w-16) */}

@@ -60,7 +60,7 @@ const BrakePedal: React.FC<BrakePedalProps> = ({ isApplied }) => {
                         height="20"
                         rx="5"
                         fill="url(#brakeFillGradient)"
-                        className={`transition-all duration-150 origin-bottom ${isApplied ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0'}`}
+                        className={`transition-opacity duration-150 ${isApplied ? 'opacity-100' : 'opacity-0'}`}
                     />
 
                     {/* Border for definition */}

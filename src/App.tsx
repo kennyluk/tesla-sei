@@ -3,7 +3,7 @@ import SteeringWheel from './components/SteeringWheel'
 import Compass from './components/Compass'
 import GForceBall from './components/GForceBall'
 import FileDropzone from './components/FileDropzone'
-import { Play, Pause, ChevronLeft } from 'lucide-react'
+import { Play, Pause, ChevronLeft, Eye, EyeOff } from 'lucide-react'
 import { SeiParser, SeiBuffer, SeiMetadata } from './services/SeiParser'
 import { useSeiSync } from './hooks/useSeiSync'
 import BrakePedal from './components/BrakePedal'
@@ -14,6 +14,7 @@ function App() {
     const [isParsing, setIsParsing] = useState(false)
     const [parseProgress, setParseProgress] = useState(0)
     const [error, setError] = useState<string | null>(null)
+    const [showGps, setShowGps] = useState(true)
     const [videoUrl, setVideoUrl] = useState<string | null>(null)
     const [hudMetadata, setHudMetadata] = useState<SeiMetadata | null>(null)
     const [isPlaying, setIsPlaying] = useState(true)
@@ -232,16 +233,25 @@ function App() {
                         <ChevronLeft size={14} /> New Clip
                     </button>
 
-                    {/* GPS Coordinates */}
-                    <div className="flex flex-col items-end gap-1">
-                        <div className="flex items-center gap-3 px-4 py-2 bg-glass-bg/90 border border-glass-border rounded-full shadow-lg backdrop-blur-2xl pointer-events-auto">
-                            <span className="text-[11px] font-mono text-[#00E5FF] tracking-widest leading-none pt-0.5 border-r border-white/10 pr-3">
-                                {hudMetadata?.latitudeDeg.toFixed(6) || '---'}°
-                            </span>
-                            <span className="text-[11px] font-mono text-[#00E5FF] tracking-widest leading-none pt-0.5">
-                                {hudMetadata?.longitudeDeg.toFixed(6) || '---'}°
-                            </span>
-                        </div>
+                    {/* GPS Coordinates Toggle & Display */}
+                    <div className="flex items-center gap-3">
+                        {showGps && (
+                            <div className="flex items-center gap-3 px-4 py-2 bg-glass-bg/90 border border-glass-border rounded-full shadow-lg backdrop-blur-2xl pointer-events-auto animate-in fade-in slide-in-from-right-2 duration-300">
+                                <span className="text-[11px] font-mono text-[#00E5FF] tracking-widest leading-none pt-0.5 border-r border-white/10 pr-3">
+                                    {hudMetadata?.latitudeDeg.toFixed(6) || '---'}°
+                                </span>
+                                <span className="text-[11px] font-mono text-[#00E5FF] tracking-widest leading-none pt-0.5">
+                                    {hudMetadata?.longitudeDeg.toFixed(6) || '---'}°
+                                </span>
+                            </div>
+                        )}
+                        <button
+                            onClick={() => setShowGps(!showGps)}
+                            className="pointer-events-auto flex items-center justify-center p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-colors backdrop-blur-md text-white/40 hover:text-white/80 h-[34px] w-[34px]"
+                            title={showGps ? "Hide GPS" : "Show GPS"}
+                        >
+                            {showGps ? <Eye size={16} /> : <EyeOff size={16} />}
+                        </button>
                     </div>
                 </div>
 
@@ -346,6 +356,7 @@ function App() {
                             blinkerOnRight={hudMetadata?.blinkerOnRight}
                             brakeApplied={hudMetadata?.brakeApplied}
                             autopilotEnabled={['AUTOSTEER', 'SELF_DRIVING'].includes(hudMetadata?.autopilotState || '')}
+                            autopilotState={hudMetadata?.autopilotState}
                         />
 
                         <div className="flex flex-col items-center">

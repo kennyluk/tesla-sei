@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 interface GForceBallProps {
     x: number; // m/s2
@@ -11,34 +11,58 @@ const GForceBall: React.FC<GForceBallProps> = ({ x, y, z }) => {
     const G_CONSTANT = 9.81;
 
     // Scale for visualization: How many pixels per G
-    // The container is 60px wide, so radius is 30px. 
-    // Let's say 1G = 25px offset.
-    const SCALE = 25;
-    const MAX_OFFSET = 25; // Clamping to stay inside circle
+    // The container is 64px wide (32px radius).
+    // Extreme Sensitivity: 0.3G = 28px offset (near edge)
+    const SCALE = 94;
+    const MAX_OFFSET = 28; // Clamping to stay inside circle (32px radius - 4px ball half)
 
     const gX = x / G_CONSTANT;
     const gY = y / G_CONSTANT;
     const gZ = z / G_CONSTANT;
 
-    // Ball movement (X is lateral, Y is longitudinal)
-    // In many coordinate systems, longitudinal is forward/backward
-    // For the UI ball:
-    // translateX = lateral G * SCALE
-    // translateY = longitudinal G * SCALE
-    // We'll assume the provided x/y mapping matches standard vehicle dynamics
-    // Adjust signs if necessary based on visual feedback
     const ballTranslateX = Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET, gX * SCALE));
     const ballTranslateY = Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET, -gY * SCALE));
+
+    // Maintain a history of positions for the 'tail'
+    const [history, setHistory] = useState<{ x: number, y: number }[]>([]);
+
+    useEffect(() => {
+        setHistory((prev: { x: number, y: number }[]) => [{ x: ballTranslateX, y: ballTranslateY }, ...prev].slice(0, 20));
+    }, [x, y, ballTranslateX, ballTranslateY]);
 
     return (
         <div className="gball-wrapper">
             <div className="gball-container">
+                {/* Reference Rings */}
+                <div className="gball-ring ring-01" style={{ width: `${0.05 * SCALE * 2}px`, height: `${0.05 * SCALE * 2}px` }}></div>
+                <div className="gball-ring ring-025" style={{ width: `${0.15 * SCALE * 2}px`, height: `${0.15 * SCALE * 2}px` }}></div>
+
                 <div className="gball-crosshair-x"></div>
                 <div className="gball-crosshair-y"></div>
+
+                {/* Trail dots */}
+                {history.slice(1).map((pos: { x: number, y: number }, i: number) => (
+                    <div
+                        key={i}
+                        className="gball-trail-dot"
+                        style={{
+                            left: '50%',
+                            top: '50%',
+                            transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`,
+                            opacity: Math.max(0, 0.9 - (i * 0.045)),
+                            width: `${Math.max(2, 6 - i * 0.2)}px`,
+                            height: `${Math.max(2, 6 - i * 0.2)}px`,
+                            boxShadow: `0 0 ${Math.max(2, 12 - i * 0.5)}px rgba(255, 59, 48, ${Math.max(0, 0.5 - i * 0.025)})`
+                        }}
+                    />
+                ))}
+
                 <div
                     className="gball-ball"
                     style={{
-                        transform: `translate(${ballTranslateX}px, ${ballTranslateY}px)`
+                        left: '50%',
+                        top: '50%',
+                        transform: `translate(calc(-50% + ${ballTranslateX}px), calc(-50% + ${ballTranslateY}px))`
                     }}
                 ></div>
             </div>
@@ -91,6 +115,27 @@ const GForceBall: React.FC<GForceBallProps> = ({ x, y, z }) => {
                     top: 0;
                 }
 
+                .gball-ring {
+                    position: absolute;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    border-radius: 50%;
+                    left: 50%;
+                    top: 50%;
+                    transform: translate(-50%, -50%);
+                    pointer-events: none;
+                }
+
+                .ring-01 { border-style: dashed; opacity: 0.5; }
+                .ring-025 { border-style: solid; opacity: 0.3; }
+
+                .gball-trail-dot {
+                    position: absolute;
+                    background: #ff3b30;
+                    border-radius: 50%;
+                    pointer-events: none;
+                    z-index: 4;
+                }
+
                 .gball-ball {
                     width: 8px;
                     height: 8px;
@@ -98,7 +143,6 @@ const GForceBall: React.FC<GForceBallProps> = ({ x, y, z }) => {
                     border-radius: 50%;
                     position: absolute;
                     box-shadow: 0 0 12px #ff3b30;
-                    transition: transform 0.1s ease-out;
                     z-index: 5;
                 }
 
