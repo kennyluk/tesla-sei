@@ -1,24 +1,5 @@
 import * as MP4Box from 'mp4box';
-
-export interface SeiMetadata {
-    version: number;
-    gearState: string;
-    frameSeqNo: number;
-    vehicleSpeedMps: number;
-    acceleratorPedalPosition: number;
-    steeringWheelAngle: number;
-    blinkerOnLeft: boolean;
-    blinkerOnRight: boolean;
-    brakeApplied: boolean;
-    autopilotState: string;
-    latitudeDeg: number;
-    longitudeDeg: number;
-    headingDeg: number;
-    linearAccelerationMps2X: number;
-    linearAccelerationMps2Y: number;
-    linearAccelerationMps2Z: number;
-    timestampMs: number;
-}
+import { SeiMetadata } from '../types';
 
 export class SeiParser {
     static async validateMp4(buffer: ArrayBuffer): Promise<boolean> {
@@ -79,25 +60,35 @@ export class SeiBuffer {
     }
 
     findClosest(timestampMs: number): SeiMetadata | null {
-        if (this.entries.length === 0) return null;
+        const { prev, next } = this.findSurrounding(timestampMs);
+        if (!prev) return next;
+        if (!next) return prev;
+
+        const prevDiff = Math.abs(prev.timestampMs - timestampMs);
+        const nextDiff = Math.abs(next.timestampMs - timestampMs);
+
+        return prevDiff <= nextDiff ? prev : next;
+    }
+
+    findSurrounding(timestampMs: number): { prev: SeiMetadata | null, next: SeiMetadata | null } {
+        if (this.entries.length === 0) return { prev: null, next: null };
 
         let low = 0;
         let high = this.entries.length - 1;
 
         while (low <= high) {
             const mid = Math.floor((low + high) / 2);
-            if (this.entries[mid].timestampMs === timestampMs) return this.entries[mid];
+            if (this.entries[mid].timestampMs === timestampMs) {
+                return { prev: this.entries[mid], next: this.entries[mid] };
+            }
             if (this.entries[mid].timestampMs < timestampMs) low = mid + 1;
             else high = mid - 1;
         }
 
-        if (low >= this.entries.length) return this.entries[this.entries.length - 1];
-        if (high < 0) return this.entries[0];
+        const prev = high >= 0 ? this.entries[high] : null;
+        const next = low < this.entries.length ? this.entries[low] : null;
 
-        const lowDiff = Math.abs(this.entries[low].timestampMs - timestampMs);
-        const highDiff = Math.abs(this.entries[high].timestampMs - timestampMs);
-
-        return lowDiff < highDiff ? this.entries[low] : this.entries[high];
+        return { prev, next };
     }
 
     getEntries() {

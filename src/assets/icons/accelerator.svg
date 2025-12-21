@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <!-- Mask: hide rod where pedal exists -->
+    <mask id="accelRodMask">
+      <rect width="48" height="48" fill="white"/>
+      <rect x="19" y="18.5" width="12" height="25" rx="4.5" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- rod (masked) -->
+  <path
+    d="M28.5 6
+       C27.5 10.5, 25.5 13.8, 24 16.5
+       C22.3 19.6, 21.5 22.1, 21.1 24.3"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="3.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.75"
+    mask="url(#accelRodMask)"
+  />
+
+  <!-- pedal body -->
+  <rect
+    x="19"
+    y="18.5"
+    width="12"
+    height="25"
+    rx="4.5"
+    fill="currentColor"
+    opacity="0.85"
+  />
+</svg>

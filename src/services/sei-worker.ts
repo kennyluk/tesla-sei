@@ -1,54 +1,5 @@
 import * as MP4Box from 'mp4box';
-import protobuf from 'protobufjs';
-
-// Tesla dashcam.proto schema as a string for worker compatibility
-const protoSchema = `
-syntax = "proto3";
-
-message SeiMetadata {
-  uint32 version = 1;
-
-  enum Gear {
-    GEAR_PARK = 0;
-    GEAR_DRIVE = 1;
-    GEAR_REVERSE = 2;
-    GEAR_NEUTRAL = 3;
-  }
-  Gear gear_state = 2;
-
-  uint64 frame_seq_no = 3;
-  float vehicle_speed_mps = 4;
-  float accelerator_pedal_position = 5;
-  float steering_wheel_angle = 6;
-  bool blinker_on_left = 7;
-  bool blinker_on_right = 8;
-  bool brake_applied = 9;
-  
-  enum AutopilotState {
-    NONE = 0;
-    SELF_DRIVING = 1;
-    AUTOSTEER = 2;
-    TACC = 3;
-  }
-  AutopilotState autopilot_state = 10;
-  double latitude_deg = 11;
-  double longitude_deg = 12;
-  double heading_deg = 13;
-  double linear_acceleration_mps2_x = 14;
-  double linear_acceleration_mps2_y = 15;
-  double linear_acceleration_mps2_z = 16;
-}
-`;
-
-const TESLA_UUID = new Uint8Array([
-    0x54, 0x45, 0x53, 0x4c, 0x41, 0x2d, 0x53, 0x45, 0x49, 0x2d, 0x44, 0x41, 0x54, 0x41, 0x2d, 0x30
-]);
-
-let SeiMetadataType: protobuf.Type | null = null;
-
-// Initialize Protobuf
-const root = protobuf.parse(protoSchema).root;
-SeiMetadataType = root.lookupType('SeiMetadata');
+import { parseSeiPayload } from './SeiDecoder';
 
 self.onmessage = async (e: MessageEvent) => {
     const { buffer } = e.data;
@@ -58,122 +9,126 @@ self.onmessage = async (e: MessageEvent) => {
     const mp4boxfile = mp4box.createFile();
 
     const results: any[] = [];
-    let videoTrackId: number | null = null;
-
-    let totalSamples = 0;
     let processedSamples = 0;
-
-    const TESLA_MAGIC = new Uint8Array([0x42, 0x42, 0x42, 0x69]);
-
-    const parseSei = (payload: Uint8Array, cts: number, timescale: number) => {
-        let p = 0;
-        while (p < payload.length) {
-            const payloadType = payload[p++];
-            let payloadSize = 0;
-            while (payload[p] === 0xFF) {
-                payloadSize += 255;
-                p++;
-            }
-            payloadSize += payload[p++];
-
-            let isTesla = false;
-            let protobufOffset = 0;
-
-            // Type 5 is User Data Unregistered
-            if (payloadType === 5 && payloadSize >= 16) {
-                const uuid = payload.slice(p, p + 16);
-
-                isTesla = uuid.every((v, i) => v === TESLA_UUID[i]);
-                if (isTesla) {
-                    protobufOffset = 16;
-                } else {
-                    // Check for 4-byte magic at the start of the "UUID"
-                    if (payloadSize >= 4) { // Ensure there's enough data for the magic
-                        const magic = payload.slice(p, p + 4);
-                        if (magic.every((v, i) => v === TESLA_MAGIC[i])) {
-                            isTesla = true;
-                            protobufOffset = 4; // Data starts right after magic
-                        }
-                    }
-                }
-            }
-
-            if (isTesla) {
-                const protobufData = payload.slice(p + protobufOffset, p + payloadSize);
-                try {
-                    if (SeiMetadataType) {
-                        const decoded = SeiMetadataType.decode(protobufData);
-                        const metadata = SeiMetadataType.toObject(decoded, {
-                            enums: String,
-                            longs: Number,
-                            defaults: true,
-                        });
-
-                        results.push({
-                            ...metadata,
-                            timestampMs: (cts / timescale) * 1000
-                        });
-                    }
-                } catch (err) {
-                    console.error('[Worker] Protobuf decode error:', err);
-                    // If it failed, maybe the offset was wrong? Try offset 0?
-                    if (SeiMetadataType && protobufOffset !== 0) {
-                        try {
-                            const decoded = SeiMetadataType.decode(payload.slice(p, p + payloadSize));
-                            const metadata = SeiMetadataType.toObject(decoded, { enums: String, longs: Number, defaults: true });
-                            results.push({ ...metadata, timestampMs: (cts / timescale) * 1000 });
-                            console.log('[Worker] Protobuf decode succeeded with offset 0');
-                        } catch (e) {
-                            // console.error('[Worker] Protobuf decode error with offset 0:', e); // Keep silent for fallback
-                        }
-                    }
-                }
-            }
-            p += payloadSize;
-        }
-    };
+    const trackMetadata = new Map<number, { isHevc: boolean, naluLengthSize: number }>();
+    let totalSamplesToProcess = 0;
 
     mp4boxfile.onReady = (info: any) => {
-        const videoTrack = info.tracks.find((t: any) => t.video);
-        if (videoTrack) {
-            videoTrackId = videoTrack.id;
-            totalSamples = videoTrack.nb_samples;
-            mp4boxfile.setExtractionOptions(videoTrackId!, null, { nbSamples: 1000 });
+        console.log(`[Worker] File Ready. Found ${info.tracks.length} tracks.`);
+
+        info.tracks.forEach((track: any) => {
+            const isVideo = track.video || track.type === 'video';
+            const isMetadata = track.type === 'meta' || track.handler === 'meta';
+            // HEVC codecs usually start with 'hvc1' or 'hev1'
+            const isHevc = !!(track.codec && (track.codec.startsWith('hvc1') || track.codec.startsWith('hev1')));
+
+            // We scan video and metadata tracks
+            if (isVideo || isMetadata) {
+                const naluLengthSize = (track.video && track.video.nalu_length_size) || 4;
+                trackMetadata.set(track.id, { isHevc, naluLengthSize });
+                totalSamplesToProcess += track.nb_samples;
+
+                console.log(`[Worker] Tracking Track ID ${track.id}: ${track.codec} (${track.handler}), Samples: ${track.nb_samples}, NALU Size: ${naluLengthSize}`);
+                mp4boxfile.setExtractionOptions(track.id, null, { nbSamples: track.nb_samples });
+            }
+        });
+
+        if (trackMetadata.size > 0) {
             mp4boxfile.start();
         } else {
-            self.postMessage({ type: 'error', message: 'No video track found' });
+            self.postMessage({ type: 'error', message: 'No suitable tracks found for telemetry extraction' });
         }
     };
-
     mp4boxfile.onSamples = (id: number, user: any, samples: any[]) => {
         processedSamples += samples.length;
-
-        if (id !== videoTrackId) return;
+        const metadata = trackMetadata.get(id);
+        if (!metadata) return;
 
         for (const sample of samples) {
             const data = new Uint8Array(sample.data);
             let offset = 0;
+            const resultsBeforeSample = results.length;
 
+            // Attempt 1: Standard NAL Unit Loop
             while (offset < data.length) {
-                if (offset + 4 > data.length) break;
-                const nalLength = (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3];
-                offset += 4;
+                if (offset + metadata.naluLengthSize > data.length) break;
 
-                if (offset + nalLength > data.length) break;
-                const nalType = data[offset] & 0x1F;
+                let nalLength = 0;
+                if (metadata.naluLengthSize === 4) {
+                    nalLength = (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3];
+                } else if (metadata.naluLengthSize === 1) {
+                    nalLength = data[offset];
+                } else if (metadata.naluLengthSize === 2) {
+                    nalLength = (data[offset] << 8) | data[offset + 1];
+                }
 
-                if (nalType === 6) {
-                    const seiPayload = data.slice(offset + 1, offset + nalLength);
-                    parseSei(seiPayload, sample.cts, sample.timescale);
+                if (nalLength <= 0 || offset + metadata.naluLengthSize + nalLength > data.length) {
+                    break;
+                }
+
+                offset += metadata.naluLengthSize;
+
+                let isSei = false;
+                if (metadata.isHevc) {
+                    // HEVC SEI: Type 39 (Prefix) or 40 (Suffix)
+                    // H.265 NAL unit header is 2 bytes: [Forbidden(1), Type(6), LayerId(6), Tid(3)]
+                    const nalType = (data[offset] >> 1) & 0x3F;
+                    isSei = (nalType === 39 || nalType === 40);
+                } else {
+                    // AVC SEI: Type 6
+                    const nalType = data[offset] & 0x1F;
+                    isSei = (nalType === 6);
+                }
+
+                if (isSei) {
+                    // Grab payload. Skip the NAL header (1 byte for AVC, 2 bytes for HEVC)
+                    const headerSize = metadata.isHevc ? 2 : 1;
+                    const seiPayload = data.slice(offset + headerSize, offset + nalLength);
+                    const parsed = parseSeiPayload(seiPayload, sample.cts, sample.timescale);
+                    if (parsed.length > 0) {
+                        results.push(...parsed);
+                    }
                 }
 
                 offset += nalLength;
             }
+
+            // Attempt 2: Surgical Fallback Magic Scan
+            if (results.length === resultsBeforeSample) {
+                for (let i = 0; i < data.length - 20; i++) {
+                    let isMatch = false;
+                    if (data[i] === 0x42 && data[i + 1] === 0x42 && data[i + 2] === 0x42 && data[i + 3] === 0x69) {
+                        isMatch = true;
+                    }
+                    else if (data[i] === 0x54 && data[i + 1] === 0x45 && data[i + 2] === 0x53 && data[i + 3] === 0x4c) {
+                        const UUID = [0x54, 0x45, 0x53, 0x4c, 0x41, 0x2d, 0x53, 0x45, 0x49, 0x2d, 0x44, 0x41, 0x54, 0x41, 0x2d, 0x30];
+                        isMatch = UUID.every((v, idx) => data[i + idx] === v);
+                    }
+
+                    if (isMatch) {
+                        // Scan back for SEI header (payload type 5)
+                        for (let startOffset = Math.max(0, i - 24); startOffset < i; startOffset++) {
+                            if (data[startOffset] === 5) {
+                                const possiblePayload = data.slice(startOffset, i + 512);
+                                const parsed = parseSeiPayload(possiblePayload, sample.cts, sample.timescale);
+                                if (parsed.length > 0) {
+                                    results.push(...parsed);
+                                    break;
+                                }
+                            }
+                        }
+                        if (results.length > resultsBeforeSample) break;
+                    }
+                }
+            }
         }
 
-        self.postMessage({ type: 'progress', count: results.length });
+        if (processedSamples % 500 === 0 || processedSamples >= totalSamplesToProcess) {
+            self.postMessage({ type: 'progress', count: results.length });
+        }
 
-        if (processedSamples >= totalSamples) {
+        if (processedSamples >= totalSamplesToProcess) {
+            console.log(`[Worker] Extraction complete. Parsed ${results.length} SEI messages from ${processedSamples} samples across multiple tracks.`);
             self.postMessage({ type: 'done', results });
         }
     };
