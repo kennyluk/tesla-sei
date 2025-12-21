@@ -1,4 +1,5 @@
 import protobuf from 'protobufjs';
+import { SeiMetadata } from './SeiParser';
 
 export const protoSchema = `
 syntax = "proto3";
@@ -54,20 +55,39 @@ export function getSeiMetadataType() {
     return SeiMetadataType;
 }
 
-export function parseSeiPayload(payload: Uint8Array, cts: number, timescale: number): any[] {
-    const results: any[] = [];
+function removeEmulationPrevention(data: Uint8Array): Uint8Array {
+    const result = new Uint8Array(data.length);
+    let j = 0;
+    for (let i = 0; i < data.length; i++) {
+        if (i + 2 < data.length && data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 3) {
+            result[j++] = 0;
+            result[j++] = 0;
+            i += 2;
+        } else {
+            result[j++] = data[i];
+        }
+    }
+    return result.slice(0, j);
+}
+
+export function parseSeiPayload(payload: Uint8Array, cts: number, timescale: number): SeiMetadata[] {
+    const results: SeiMetadata[] = [];
     const type = getSeiMetadataType();
+
+    // CRITICAL: Unescape the entire SEI RBSP first. 
+    // This ensures payloadType and payloadSize are correctly calculated relative to the unescaped buffer.
+    const unescaped = removeEmulationPrevention(payload);
     let p = 0;
 
-    while (p < payload.length) {
-        const payloadType = payload[p++];
+    while (p < unescaped.length) {
+        const payloadType = unescaped[p++];
         let payloadSize = 0;
-        while (p < payload.length && payload[p] === 0xFF) {
+        while (p < unescaped.length && unescaped[p] === 0xFF) {
             payloadSize += 255;
             p++;
         }
-        if (p >= payload.length) break;
-        payloadSize += payload[p++];
+        if (p >= unescaped.length) break;
+        payloadSize += unescaped[p++];
 
         let isTesla = false;
         let protobufOffset = 0;
@@ -75,14 +95,16 @@ export function parseSeiPayload(payload: Uint8Array, cts: number, timescale: num
         // Type 5 is User Data Unregistered
         if (payloadType === 5) {
             if (payloadSize >= 16) {
-                const uuid = payload.slice(p, p + 16);
-                isTesla = uuid.every((v, i) => v === TESLA_UUID[i]);
-                if (isTesla) protobufOffset = 16;
+                const uuid = unescaped.slice(p, p + 16);
+                isTesla = uuid.every((v: number, i: number) => v === (TESLA_UUID as any)[i]);
+                if (isTesla) {
+                    protobufOffset = 16;
+                }
             }
 
             if (!isTesla && payloadSize >= 4) {
-                const magic = payload.slice(p, p + 4);
-                if (magic.every((v, i) => v === TESLA_MAGIC[i])) {
+                const magic = unescaped.slice(p, p + 4);
+                if (magic.every((v: number, i: number) => v === (TESLA_MAGIC as any)[i])) {
                     isTesla = true;
                     protobufOffset = 4;
                 }
@@ -90,9 +112,10 @@ export function parseSeiPayload(payload: Uint8Array, cts: number, timescale: num
         }
 
         if (isTesla && type) {
-            const protobufData = payload.slice(p + protobufOffset, p + payloadSize);
+            const protobufData = unescaped.slice(p + protobufOffset, p + payloadSize);
+
             try {
-                const decoded = type.decode(protobufData);
+                const decoded = type.decode(protobufData as Uint8Array);
                 const metadata = type.toObject(decoded, {
                     enums: String,
                     longs: Number,
@@ -101,16 +124,20 @@ export function parseSeiPayload(payload: Uint8Array, cts: number, timescale: num
                 results.push({
                     ...metadata,
                     timestampMs: (cts / timescale) * 1000
-                });
+                } as SeiMetadata);
             } catch (err) {
                 // Fallback for offset 0
                 if (protobufOffset !== 0) {
                     try {
-                        const decoded = type.decode(payload.slice(p, p + payloadSize));
+                        const fallbackData = unescaped.slice(p, p + payloadSize);
+                        const decoded = type.decode(fallbackData as Uint8Array);
                         const metadata = type.toObject(decoded, { enums: String, longs: Number, defaults: true });
-                        results.push({ ...metadata, timestampMs: (cts / timescale) * 1000 });
+                        results.push({
+                            ...metadata,
+                            timestampMs: (cts / timescale) * 1000
+                        } as SeiMetadata);
                     } catch (e) {
-                        // Silent fail
+                        // Fallback also failed
                     }
                 }
             }

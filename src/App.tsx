@@ -10,7 +10,7 @@ function App() {
     const [parseProgress, setParseProgress] = useState(0)
     const [error, setError] = useState<string | null>(null)
     const [videoUrl, setVideoUrl] = useState<string | null>(null)
-    const [angle, setAngle] = useState(0)
+    const [hudMetadata, setHudMetadata] = useState<SeiMetadata | null>(null)
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const [seiBuffer, setSeiBuffer] = useState<SeiBuffer | null>(null)
     const metadataRef = useSeiSync(videoRef, seiBuffer)
@@ -66,12 +66,19 @@ function App() {
         }
     }
 
-    // Update HUD from Ref
+    // Update HUD from Ref 60 times a second
     useEffect(() => {
         if (view !== 'dashboard') return
         const updateHud = () => {
             if (metadataRef.current) {
-                setAngle(metadataRef.current.steeringWheelAngle)
+                // Set the entire object to trigger a re-render every frame
+                // even if individual values didn't change (e.g. driving straight)
+                setHudMetadata({ ...metadataRef.current })
+
+                // Debug logging to verify SEQ speed
+                if (metadataRef.current.frameSeqNo % 30 === 0) {
+                    console.log(`[HUD Update] Time: ${videoRef.current?.currentTime.toFixed(3)}s | SEQ: ${metadataRef.current.frameSeqNo}`);
+                }
             }
             requestAnimationFrame(updateHud)
         }
@@ -149,19 +156,24 @@ function App() {
                 <div className="w-full h-20 bg-glass-bg backdrop-blur-xl border-t border-glass-border flex justify-between items-center px-10 pointer-events-auto">
                     <div className="flex-1 flex justify-start gap-6">
                         <div className="text-xs text-white/50">
-                            {metadataRef.current ? `SEQ: ${metadataRef.current.frameSeqNo}` : 'WAITING FOR DATA...'}
+                            {hudMetadata ? `SEQ: ${hudMetadata.frameSeqNo}` : 'WAITING FOR DATA...'}
                         </div>
                     </div>
 
                     <div className="flex-1.2 flex justify-center">
                         <div className="text-2xl font-bold font-outfit">
-                            {metadataRef.current ? Math.round(metadataRef.current.vehicleSpeedMps * 2.237) : 0}
+                            {hudMetadata ? Math.round(hudMetadata.vehicleSpeedMps * 2.237) : 0}
                             <span className="text-xs ml-1 opacity-50">MPH</span>
                         </div>
                     </div>
 
                     <div className="flex-1 flex justify-end gap-6 items-center">
-                        <SteeringWheel angle={angle} />
+                        <SteeringWheel
+                            angle={hudMetadata?.steeringWheelAngle || 0}
+                            blinkerOnLeft={hudMetadata?.blinkerOnLeft}
+                            blinkerOnRight={hudMetadata?.blinkerOnRight}
+                            brakeApplied={hudMetadata?.brakeApplied}
+                        />
                     </div>
                 </div>
             </div>

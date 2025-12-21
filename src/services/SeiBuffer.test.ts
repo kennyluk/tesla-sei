@@ -86,4 +86,40 @@ describe('SeiBuffer', () => {
         buffer.clear();
         expect(buffer.getEntries().length).toBe(0);
     });
+
+    describe('findSurrounding', () => {
+        it('should return the same point for both prev and next if exact match found', () => {
+            buffer.addEntries([mockMetadata(100), mockMetadata(200), mockMetadata(300)]);
+            const { prev, next } = buffer.findSurrounding(200);
+            expect(prev?.timestampMs).toBe(200);
+            expect(next?.timestampMs).toBe(200);
+        });
+
+        it('should return surrounding points when timestamp is between points', () => {
+            buffer.addEntries([mockMetadata(100), mockMetadata(200), mockMetadata(300)]);
+            const { prev, next } = buffer.findSurrounding(150);
+            expect(prev?.timestampMs).toBe(100);
+            expect(next?.timestampMs).toBe(200);
+        });
+
+        it('should return null for prev if timestamp is before first point', () => {
+            buffer.addEntries([mockMetadata(100), mockMetadata(200)]);
+            const { prev, next } = buffer.findSurrounding(50);
+            expect(prev).toBeNull();
+            expect(next?.timestampMs).toBe(100);
+        });
+
+        it('should return null for next if timestamp is after last point', () => {
+            buffer.addEntries([mockMetadata(100), mockMetadata(200)]);
+            const { prev, next } = buffer.findSurrounding(300);
+            expect(prev?.timestampMs).toBe(200);
+            expect(next).toBeNull();
+        });
+
+        it('should return null for both if buffer is empty', () => {
+            const { prev, next } = buffer.findSurrounding(100);
+            expect(prev).toBeNull();
+            expect(next).toBeNull();
+        });
+    });
 });
