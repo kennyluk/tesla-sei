@@ -255,11 +255,11 @@ async function startExport(
 
     // We can assume decoder has received all chunks.
     if (decoder && encoder && muxer) {
-        await decoder.flush();
+        await (decoder as any).flush();
         console.log('Worker: Decoder flushed.');
-        await encoder.flush();
+        await (encoder as any).flush();
         console.log('Worker: Encoder flushed.');
-        muxer.finalize();
+        (muxer as any).finalize();
         console.log('Worker: Muxer finalized.');
 
         const buffer = muxer.target.buffer;
