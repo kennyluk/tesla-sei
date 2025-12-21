@@ -284,19 +284,35 @@ function App() {
                     </div>
 
                     <div className="flex-1 flex flex-col items-center justify-center gap-1">
-                        <Compass headingDeg={hudMetadata?.headingDeg || 0} />
-                        <div className="text-2xl font-bold font-outfit mt-[-8px] text-white/90">
-                            {hudMetadata ? Math.round(hudMetadata.vehicleSpeedMps * 2.237) : 0}
-                            <span className="text-[10px] ml-1 opacity-50 uppercase tracking-widest font-inter">mph</span>
+                        <div className="flex items-center gap-10">
+                            {/* Left Blinker */}
+                            <div className={`text-2xl transition-all duration-200 transform ${hudMetadata?.blinkerOnLeft ? 'text-[#4caf50] drop-shadow-[0_0_8px_#4caf50] opacity-100 scale-110' : 'text-white/10 scale-100'}`}>
+                                ◀
+                            </div>
+
+                            <div className="text-2xl font-bold font-outfit mt-[-8px] text-white/90">
+                                {hudMetadata ? Math.round(hudMetadata.vehicleSpeedMps * 2.237) : 0}
+                                <span className="text-[10px] ml-1 opacity-50 uppercase tracking-widest font-inter">mph</span>
+                            </div>
+
+                            {/* Right Blinker */}
+                            <div className={`text-2xl transition-all duration-200 transform ${hudMetadata?.blinkerOnRight ? 'text-[#4caf50] drop-shadow-[0_0_8px_#4caf50] opacity-100 scale-110' : 'text-white/10 scale-100'}`}>
+                                ▶
+                            </div>
                         </div>
                     </div>
 
                     <div className="flex-1 flex justify-end gap-6 items-center">
+                        <Compass headingDeg={hudMetadata?.headingDeg || 0} />
+
+                        <div className="h-8 w-px bg-white/10" /> {/* Divider */}
+
                         <SteeringWheel
                             angle={hudMetadata?.steeringWheelAngle || 0}
                             blinkerOnLeft={hudMetadata?.blinkerOnLeft}
                             blinkerOnRight={hudMetadata?.blinkerOnRight}
                             brakeApplied={hudMetadata?.brakeApplied}
+                            autopilotEnabled={['AUTOSTEER', 'SELF_DRIVING'].includes(hudMetadata?.autopilotState || '')}
                         />
 
                         <div className="h-8 w-px bg-white/10" /> {/* Divider */}
