@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import SteeringWheel from './components/SteeringWheel'
+import Compass from './components/Compass'
+import GForceBall from './components/GForceBall'
 import FileDropzone from './components/FileDropzone'
 import { SeiParser, SeiBuffer, SeiMetadata } from './services/SeiParser'
 import { useSeiSync } from './hooks/useSeiSync'
@@ -153,17 +155,23 @@ function App() {
                 </div>
 
                 {/* Bottom Bar Shell */}
-                <div className="w-full h-20 bg-glass-bg backdrop-blur-xl border-t border-glass-border flex justify-between items-center px-10 pointer-events-auto">
-                    <div className="flex-1 flex justify-start gap-6">
+                <div className="w-full h-24 bg-glass-bg backdrop-blur-xl border-t border-glass-border flex justify-between items-center px-10 pointer-events-auto">
+                    <div className="flex-1 flex justify-start gap-6 items-center">
+                        <GForceBall
+                            x={hudMetadata?.linearAccelerationMps2X || 0}
+                            y={hudMetadata?.linearAccelerationMps2Y || 0}
+                            z={hudMetadata?.linearAccelerationMps2Z || 0}
+                        />
                         <div className="text-xs text-white/50">
                             {hudMetadata ? `SEQ: ${hudMetadata.frameSeqNo}` : 'WAITING FOR DATA...'}
                         </div>
                     </div>
 
-                    <div className="flex-1.2 flex justify-center">
-                        <div className="text-2xl font-bold font-outfit">
+                    <div className="flex-1 flex flex-col items-center justify-center gap-1">
+                        <Compass headingDeg={hudMetadata?.headingDeg || 0} />
+                        <div className="text-2xl font-bold font-outfit mt-[-10px]">
                             {hudMetadata ? Math.round(hudMetadata.vehicleSpeedMps * 2.237) : 0}
-                            <span className="text-xs ml-1 opacity-50">MPH</span>
+                            <span className="text-xs ml-1 opacity-50 uppercase">mph</span>
                         </div>
                     </div>
 
