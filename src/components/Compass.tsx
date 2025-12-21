@@ -44,22 +44,32 @@ const Compass: React.FC<CompassProps> = ({ headingDeg }) => {
 
     return (
         <div className="compass-wrapper">
-            <div className="compass-degree-top">{Math.round(normalizedHeading)}°</div>
-            <div className="compass-window">
-                <div className="compass-center-marker" />
-                <div
-                    className="compass-tape"
-                    style={{ transform: `translateX(${translateX}px)` }}
-                >
-                    {marks.map((mark) => (
-                        <div key={mark.key} className="tape-mark">
-                            <span className={`mark-text ${mark.isCardinal ? 'mark-cardinal' : ''}`}>
-                                {mark.text}
-                            </span>
-                            <div className="mark-line" />
-                        </div>
-                    ))}
+            {/* Top Zone - Standardized 24px (h-6) + 8px (mb-2) */}
+            <div className="h-6 mb-2 invisible" />
+
+            {/* Visual Body - Fixed 64px matching Wheel height */}
+            <div className="h-16 flex items-center justify-center">
+                <div className="compass-window">
+                    <div className="compass-center-marker" />
+                    <div
+                        className="compass-tape"
+                        style={{ transform: `translateX(${translateX}px)` }}
+                    >
+                        {marks.map((mark) => (
+                            <div key={mark.key} className="tape-mark">
+                                <span className={`mark-text ${mark.isCardinal ? 'mark-cardinal' : ''}`}>
+                                    {mark.text}
+                                </span>
+                                <div className="mark-line" />
+                            </div>
+                        ))}
+                    </div>
                 </div>
+            </div>
+
+            {/* Reading Container - Consistent spacing and height */}
+            <div className="compass-data mt-2 h-5 flex items-center justify-center">
+                <div className="compass-degree-bottom">{Math.round(normalizedHeading)}°</div>
             </div>
 
             <style>{`
@@ -67,22 +77,24 @@ const Compass: React.FC<CompassProps> = ({ headingDeg }) => {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2px;
             position: relative;
-            transform: scale(0.9); /* Subtle scale down to fit better */
         }
 
-        .compass-degree-top {
+        .compass-data {
+            /* Styles moved to utility classes on the div itself */
+        }
+
+        .compass-degree-bottom {
             font-size: 14px;
             font-weight: 800;
-            color: #4df3ff;
+            color: #00E5FF;
             font-family: 'Outfit', sans-serif;
             text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
             letter-spacing: 0.5px;
         }
 
         .compass-window {
-            width: 220px;
+            width: 140px;
             height: 42px;
             background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
             border: 1px solid rgba(255, 255, 255, 0.08);

@@ -231,10 +231,22 @@ function App() {
                     >
                         <ChevronLeft size={14} /> New Clip
                     </button>
+
+                    {/* GPS Coordinates */}
+                    <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-3 px-4 py-2 bg-glass-bg/90 border border-glass-border rounded-full shadow-lg backdrop-blur-2xl pointer-events-auto">
+                            <span className="text-[11px] font-mono text-[#00E5FF] tracking-widest leading-none pt-0.5 border-r border-white/10 pr-3">
+                                {hudMetadata?.latitudeDeg.toFixed(6) || '---'}°
+                            </span>
+                            <span className="text-[11px] font-mono text-[#00E5FF] tracking-widest leading-none pt-0.5">
+                                {hudMetadata?.longitudeDeg.toFixed(6) || '---'}°
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Unified Scrubber & Controls */}
-                <div className="absolute bottom-24 left-10 right-10 flex items-center gap-4 z-50 pointer-events-none">
+                <div className="absolute bottom-40 left-10 right-10 flex items-center gap-4 z-50 pointer-events-none">
                     <div className="flex-1 flex items-center gap-4 p-2 pl-4 pr-6 rounded-full bg-glass-bg/90 border border-glass-border shadow-2xl backdrop-blur-2xl pointer-events-auto">
                         <button
                             onClick={togglePlayback}
@@ -262,37 +274,52 @@ function App() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Integrated SEQ Display */}
+                        <div className="flex-shrink-0 px-3 py-1 rounded-md bg-white/5 border border-white/5">
+                            <span className="text-[10px] font-mono text-white/40 tracking-widest">
+                                {hudMetadata ? `SEQ: ${hudMetadata.frameSeqNo.toString().padStart(6, '0')}` : '---'}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 {/* Bottom Bar Shell */}
-                <div className="w-full h-24 bg-glass-bg backdrop-blur-xl border-t border-glass-border flex justify-between items-center px-10 pointer-events-auto">
-                    <div className="flex-1 flex justify-start gap-6 items-center">
+                <div className="w-full h-36 bg-glass-bg/95 backdrop-blur-xl border-t border-glass-border flex justify-between items-center px-10 pointer-events-auto transition-all">
+                    <div className="flex-1 flex justify-start gap-10 items-start">
                         <BrakePedal isApplied={hudMetadata?.brakeApplied} />
 
-                        <div className="h-8 w-px bg-white/10" /> {/* Divider */}
+                        <div className="flex flex-col items-center">
+                            <div className="h-6 mb-2 invisible" /> {/* Top Spacer */}
+                            <div className="h-16 flex items-center">
+                                <div className="h-10 w-px bg-white/10" />
+                            </div>
+                            <div className="mt-2 h-5 invisible" /> {/* Bottom Spacer */}
+                        </div>
 
-                        <GForceBall
-                            x={hudMetadata?.linearAccelerationMps2X || 0}
-                            y={hudMetadata?.linearAccelerationMps2Y || 0}
-                            z={hudMetadata?.linearAccelerationMps2Z || 0}
-                        />
-
-                        <div className="text-xs text-white/50 font-mono tracking-tighter">
-                            {hudMetadata ? `SEQ: ${hudMetadata.frameSeqNo.toString().padStart(6, '0')}` : 'WAITING FOR DATA...'}
+                        <div className="flex flex-col items-center">
+                            <div className="h-6 mb-2 invisible" />
+                            <GForceBall
+                                x={hudMetadata?.linearAccelerationMps2X || 0}
+                                y={hudMetadata?.linearAccelerationMps2Y || 0}
+                                z={hudMetadata?.linearAccelerationMps2Z || 0}
+                            />
+                            <div className="mt-2 h-5 invisible" />
                         </div>
                     </div>
 
-                    <div className="flex-1 flex flex-col items-center justify-center gap-1">
+                    <div className="flex-1 flex flex-col items-center justify-center self-center">
                         <div className="flex items-center gap-10">
                             {/* Left Blinker */}
                             <div className={`text-2xl transition-all duration-200 transform ${hudMetadata?.blinkerOnLeft ? 'text-[#4caf50] drop-shadow-[0_0_8px_#4caf50] opacity-100 scale-110' : 'text-white/10 scale-100'}`}>
                                 ◀
                             </div>
 
-                            <div className="text-2xl font-bold font-outfit mt-[-8px] text-white/90">
-                                {hudMetadata ? Math.round(hudMetadata.vehicleSpeedMps * 2.237) : 0}
-                                <span className="text-[10px] ml-1 opacity-50 uppercase tracking-widest font-inter">mph</span>
+                            <div className="flex flex-col items-center">
+                                <span className="text-4xl font-bold font-outfit text-white/90 leading-none">
+                                    {hudMetadata ? Math.round(hudMetadata.vehicleSpeedMps * 2.237) : 0}
+                                </span>
+                                <span className="text-[10px] opacity-50 uppercase tracking-widest font-inter mt-1">mph</span>
                             </div>
 
                             {/* Right Blinker */}
@@ -302,10 +329,16 @@ function App() {
                         </div>
                     </div>
 
-                    <div className="flex-1 flex justify-end gap-6 items-center">
+                    <div className="flex-1 flex justify-end gap-10 items-start">
                         <Compass headingDeg={hudMetadata?.headingDeg || 0} />
 
-                        <div className="h-8 w-px bg-white/10" /> {/* Divider */}
+                        <div className="flex flex-col items-center">
+                            <div className="h-6 mb-2 invisible" />
+                            <div className="h-16 flex items-center">
+                                <div className="h-10 w-px bg-white/10" />
+                            </div>
+                            <div className="mt-2 h-5 invisible" />
+                        </div>
 
                         <SteeringWheel
                             angle={hudMetadata?.steeringWheelAngle || 0}
@@ -315,7 +348,13 @@ function App() {
                             autopilotEnabled={['AUTOSTEER', 'SELF_DRIVING'].includes(hudMetadata?.autopilotState || '')}
                         />
 
-                        <div className="h-8 w-px bg-white/10" /> {/* Divider */}
+                        <div className="flex flex-col items-center">
+                            <div className="h-6 mb-2 invisible" />
+                            <div className="h-16 flex items-center">
+                                <div className="h-10 w-px bg-white/10" />
+                            </div>
+                            <div className="mt-2 h-5 invisible" />
+                        </div>
 
                         <AcceleratorPedal value={hudMetadata?.acceleratorPedalPosition} />
                     </div>

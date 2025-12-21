@@ -44,9 +44,9 @@ const GForceBall: React.FC<GForceBallProps> = ({ x, y, z }) => {
             </div>
             <div className="gball-values">
                 <div className="gball-header">G-Forces</div>
-                <div className="gball-val-row">X: <span>{gX.toFixed(2)}</span></div>
-                <div className="gball-val-row">Y: <span>{gY.toFixed(2)}</span></div>
-                <div className="gball-val-row">Z: <span>{gZ.toFixed(2)}</span></div>
+                <div className="gball-val-row">X: <span className={gX >= 0.05 ? 'text-green-500' : gX <= -0.05 ? 'text-red-500' : ''}>{Math.abs(gX) < 0.05 ? '0.0' : gX.toFixed(1)}</span></div>
+                <div className="gball-val-row">Y: <span className={gY >= 0.05 ? 'text-green-500' : gY <= -0.05 ? 'text-red-500' : ''}>{Math.abs(gY) < 0.05 ? '0.0' : gY.toFixed(1)}</span></div>
+                <div className="gball-val-row">Z: <span className={gZ >= 0.05 ? 'text-green-500' : gZ <= -0.05 ? 'text-red-500' : ''}>{Math.abs(gZ) < 0.05 ? '0.0' : gZ.toFixed(1)}</span></div>
             </div>
 
             <style>{`
@@ -58,8 +58,8 @@ const GForceBall: React.FC<GForceBallProps> = ({ x, y, z }) => {
                 }
 
                 .gball-container {
-                    width: 60px;
-                    height: 60px;
+                    width: 64px;
+                    height: 64px;
                     border-radius: 50%;
                     background: rgba(255, 255, 255, 0.05);
                     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -113,7 +113,7 @@ const GForceBall: React.FC<GForceBallProps> = ({ x, y, z }) => {
                 .gball-val-row {
                     font-size: 9px;
                     font-weight: 700;
-                    color: #ff3b30;
+                    color: rgba(255, 255, 255, 0.3);
                     font-family: 'Outfit', sans-serif;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
@@ -121,9 +121,12 @@ const GForceBall: React.FC<GForceBallProps> = ({ x, y, z }) => {
                 }
                 
                 .gball-val-row span {
-                    color: rgba(255, 255, 255, 0.9);
                     margin-left: 2px;
+                    transition: color 0.15s ease;
                 }
+
+                .gball-val-row .text-green-500 { color: #4caf50; }
+                .gball-val-row .text-red-500 { color: #ff3b30; }
 
                 .gball-header {
                     font-size: 8px;

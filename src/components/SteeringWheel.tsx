@@ -16,16 +16,20 @@ const SteeringWheel: React.FC<SteeringWheelProps> = ({
     autopilotEnabled = false
 }) => {
     return (
-        <div className="flex flex-col items-center gap-2">
-            <div className="flex gap-4 mb-1">
-                <div className={`w-2 h-2 rounded-full transition-colors ${blinkerOnLeft ? 'bg-green-500 shadow-[0_0_8px_#10b981]' : 'bg-white/10'}`} />
-                <div className={`w-2 h-2 rounded-full transition-colors ${brakeApplied ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-white/10'}`} />
-                <div className={`w-2 h-2 rounded-full transition-colors ${blinkerOnRight ? 'bg-green-500 shadow-[0_0_8px_#10b981]' : 'bg-white/10'}`} />
+        <div className="flex flex-col items-center">
+            {/* Top Zone - Standardized 24px (h-6) + 8px (mb-2) */}
+            <div className="h-6 flex items-center justify-center mb-2">
+                <div className="flex gap-3">
+                    <div className={`w-1.5 h-1.5 rounded-full transition-colors ${blinkerOnLeft ? 'bg-green-500 shadow-[0_0_8px_#10b981]' : 'bg-white/10'}`} />
+                    <div className={`w-1.5 h-1.5 rounded-full transition-colors ${brakeApplied ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-white/10'}`} />
+                    <div className={`w-1.5 h-1.5 rounded-full transition-colors ${blinkerOnRight ? 'bg-green-500 shadow-[0_0_8px_#10b981]' : 'bg-white/10'}`} />
+                </div>
             </div>
 
-            <div className="relative">
+            {/* Wheel Container - Fixed 64px (w-16) */}
+            <div className="w-16 h-16 relative flex justify-center items-center">
                 <div
-                    className="w-16 h-16 relative flex justify-center items-center transition-transform duration-75 ease-linear"
+                    className="w-full h-full relative transition-transform duration-75 ease-linear"
                     style={{ transform: `rotate(${angle}deg)` }}
                 >
                     <svg viewBox="0 0 484 412" className={`w-full h-full drop-shadow-2xl transition-all duration-300 ${autopilotEnabled ? 'drop-shadow-[0_0_15px_rgba(41,98,255,0.5)]' : ''}`}>
@@ -47,12 +51,10 @@ const SteeringWheel: React.FC<SteeringWheelProps> = ({
                 </div>
             </div>
 
-            <div className="flex flex-col items-center">
-                <span className="text-xs font-bold text-[#00E5FF] font-outfit drop-shadow-[0_0_8px_rgba(0,229,255,0.6)]">
+            {/* Reading Container - Fixed spacing from top of wheel context */}
+            <div className="flex flex-col items-center mt-2 h-5 justify-center">
+                <span className="text-[14px] font-extrabold text-[#00E5FF] font-outfit drop-shadow-[0_0_8px_rgba(0,229,255,0.6)]">
                     {Math.round(angle)}°
-                </span>
-                <span className="text-[10px] text-white/40 uppercase tracking-wider font-medium">
-                    Steering
                 </span>
             </div>
         </div>
