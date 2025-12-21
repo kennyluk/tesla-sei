@@ -2,7 +2,8 @@
  * @vitest-environment node
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { SeiBuffer, SeiMetadata } from './SeiParser';
+import { SeiBuffer } from './SeiParser';
+import { SeiMetadata } from '../types';
 
 describe('SeiBuffer', () => {
     let buffer: SeiBuffer;

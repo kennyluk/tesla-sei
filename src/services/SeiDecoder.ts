@@ -1,5 +1,5 @@
 import protobuf from 'protobufjs';
-import { SeiMetadata } from './SeiParser';
+import { SeiMetadata } from '../types';
 
 export const protoSchema = `
 syntax = "proto3";
