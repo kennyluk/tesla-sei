@@ -2,43 +2,15 @@
 
 A high-performance, client-side web application for visualizing and exporting Tesla dashcam telemetry.
 
-<<<<<<< HEAD
-=======
 **Try it out now: [https://carter437.github.io/tesla-sei/](https://carter437.github.io/tesla-sei/)**
 
 [![Tesla SEI Explorer Preview](./preview.png)](https://carter437.github.io/tesla-sei/)
 
-
->>>>>>> develop
 ## 🌟 Overview
 
 The **Tesla SEI Visualizer** allows Tesla owners to extract hidden "SEI" (Supplemental Enhancement Information) metadata from their dashcam or Sentry Mode footage. This metadata contains rich telemetry data including speed, pedal positions, steering angle, G-forces, and GPS coordinates.
 
-<<<<<<< HEAD
 This tool provides a real-time dashboard for viewing this data alongside your video and, most importantly, a **Video Export Engine** that "burns" these telemetry overlays directly into a new shareable MP4 file—all entirely within your browser.
-=======
-This tool provides a real-time dashboard for viewing this data alongside your video. 
-
-The standout feature is the **"Export with Overlays"** button. With a single click, the app spins up a high-performance background process that:
--   **Synchronizes** the hidden telemetry with every video frame.
--   **Renders** the dynamic gauges (G-Ball, Speed, Pedals) directly onto the video.
--   **Encodes** a new, shareable MP4 file—all right in your browser without uploading a single byte to a server. 
-
-Whether you're sharing a track day clip or verifying a Sentry Mode incident, you get a professional-looking video ready for social media in seconds.
-
-## 🕹️ UI Components
-
-The visualizer features a high-fidelity dashboard designed to match the Tesla aesthetic:
-
--   ⚡ **Speedometer**: A central readout showing velocity in MPH, flanked by active **Turn Signal** indicators (◀/▶) that glow green when blinking.
--   📉 **G-Force Ball**: Visualizes lateral and longitudinal acceleration. It features numerical X, Y, and Z readouts with dynamic color-coding (green for positive, red for negative) to track cornering and braking forces.
--   🎡 **Steering Wheel**: Rotates in real-time based on the actual steering rack angle. The icon glows **Tesla Blue** and displays status labels (TACC, Autosteer, FSD) when Autopilot systems are active.
--   🧭 **Compass Tape**: A sliding horizontal tape showing the vehicle's heading with cardinal directions and a precise degree readout.
--   🦶 **Pedal Telemetry**: 
-    -   **Brake**: A pedal icon that glows red when physical braking is applied.
-    -   **Accelerator**: A vertical gauge that fills with a blue gradient based on the percentage of pedal travel.
--   📍 **GPS Privacy Pill**: Displays real-time Latitude and Longitude. This component can be toggled off via the "Eye" icon in the UI to exclude it from being burned into the video during export.
->>>>>>> develop
 
 ## 🎞️ The "Why"
 
