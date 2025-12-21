@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <!-- Mask: hide rod where pedal exists -->
+    <mask id="brakeRodMask">
+      <!-- show everything by default -->
+      <rect width="48" height="48" fill="white"/>
+      <!-- hide area under pedal -->
+      <rect x="10" y="22" width="28" height="20" rx="5" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- rod (masked) -->
+  <path
+    d="M30 5
+       C27 11, 22 15, 19.5 19.5
+       C18 22.2, 17.2 24.2, 16.6 26.2"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="3.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.75"
+    mask="url(#brakeRodMask)"
+  />
+
+  <!-- pedal body -->
+  <rect
+    x="10"
+    y="22"
+    width="28"
+    height="20"
+    rx="5"
+    fill="currentColor"
+    opacity="0.85"
+  />
+</svg>

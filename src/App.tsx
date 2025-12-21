@@ -6,6 +6,8 @@ import FileDropzone from './components/FileDropzone'
 import { Play, Pause, ChevronLeft } from 'lucide-react'
 import { SeiParser, SeiBuffer, SeiMetadata } from './services/SeiParser'
 import { useSeiSync } from './hooks/useSeiSync'
+import BrakePedal from './components/BrakePedal'
+import AcceleratorPedal from './components/AcceleratorPedal'
 
 function App() {
     const [view, setView] = useState<'upload' | 'dashboard'>('upload')
@@ -266,6 +268,10 @@ function App() {
                 {/* Bottom Bar Shell */}
                 <div className="w-full h-24 bg-glass-bg backdrop-blur-xl border-t border-glass-border flex justify-between items-center px-10 pointer-events-auto">
                     <div className="flex-1 flex justify-start gap-6 items-center">
+                        <BrakePedal isApplied={hudMetadata?.brakeApplied} />
+
+                        <div className="h-8 w-px bg-white/10" /> {/* Divider */}
+
                         <GForceBall
                             x={hudMetadata?.linearAccelerationMps2X || 0}
                             y={hudMetadata?.linearAccelerationMps2Y || 0}
@@ -292,6 +298,10 @@ function App() {
                             blinkerOnRight={hudMetadata?.blinkerOnRight}
                             brakeApplied={hudMetadata?.brakeApplied}
                         />
+
+                        <div className="h-8 w-px bg-white/10" /> {/* Divider */}
+
+                        <AcceleratorPedal value={hudMetadata?.acceleratorPedalPosition} />
                     </div>
                 </div>
             </div>
