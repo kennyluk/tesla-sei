@@ -150,6 +150,16 @@ function drawCenterCluster(
     ctx.font = `600 ${s(14)}px ${font}`;
     ctx.fillText('MPH', 0, s(45));
 
+    // Gear State
+    if (data.gearState) {
+        const gearLetter = data.gearState.replace('GEAR_', '')[0];
+        ctx.fillStyle = '#00E5FF';
+        ctx.shadowColor = '#00E5FF';
+        ctx.shadowBlur = s(8);
+        ctx.font = `bold ${s(12)}px ${font}`;
+        ctx.fillText(gearLetter, 0, s(56));
+    }
+
     // Blinkers
     const blinkerOffset = s(80);
     const arrowSize = s(32);
@@ -506,7 +516,7 @@ function drawCompass(
     ctx.shadowBlur = 0;
     ctx.fillStyle = '#00E5FF';
     ctx.font = `800 ${s(16)}px ${font}`;
-    ctx.fillText(`${Math.round(heading)}°`, 0, s(40));
+    ctx.fillText(`${Math.round(heading)}°`, 0, s(50));
 
     ctx.restore();
 }
@@ -584,7 +594,7 @@ function drawSteeringWheel(
     ctx.fillStyle = '#00E5FF'; // Blue logic
     ctx.shadowColor = 'rgba(0, 229, 255, 0.4)';
     ctx.shadowBlur = s(5);
-    ctx.fillText(`${Math.round(angle)}°`, 0, size / 2 + s(8));
+    ctx.fillText(`${Math.round(angle)}°`, 0, s(50));
 
     ctx.restore();
 }

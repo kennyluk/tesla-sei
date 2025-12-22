@@ -422,7 +422,9 @@ function App() {
                         </div>
                     </div>
 
-                    <div className="flex-1 flex flex-col items-center justify-center self-center">
+                    <div className="flex-1 flex flex-col items-center justify-start self-stretch">
+                        <div className="h-6 mb-2 invisible" /> {/* Top Spacer matching side components */}
+
                         <div className="flex items-center gap-10">
                             {/* Left Blinker */}
                             <div className={`text-2xl transition-all duration-200 transform ${hudMetadata?.blinkerOnLeft ? 'text-[#4caf50] drop-shadow-[0_0_8px_#4caf50] opacity-100 scale-110' : 'text-white/10 scale-100'}`}>
@@ -430,10 +432,20 @@ function App() {
                             </div>
 
                             <div className="flex flex-col items-center">
-                                <span className="text-4xl font-bold font-outfit text-white/90 leading-none">
-                                    {hudMetadata ? Math.round(hudMetadata.vehicleSpeedMps * 2.237) : 0}
-                                </span>
-                                <span className="text-[10px] opacity-50 uppercase tracking-widest font-inter mt-1">mph</span>
+                                <div className="h-16 flex flex-col justify-center items-center">
+                                    <span className="text-4xl font-bold font-outfit text-white/90 leading-none">
+                                        {hudMetadata ? Math.round(hudMetadata.vehicleSpeedMps * 2.237) : 0}
+                                    </span>
+                                    <span className="text-[10px] opacity-50 uppercase tracking-widest font-inter mt-1">mph</span>
+                                </div>
+
+                                <div className="mt-4 h-5 flex items-center justify-center">
+                                    {hudMetadata && (
+                                        <span className="text-[14px] font-extrabold text-tesla-blue font-outfit drop-shadow-[0_0_8px_#00E5FF] transition-all duration-300">
+                                            {hudMetadata.gearState.replace('GEAR_', '')[0]}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Right Blinker */}
