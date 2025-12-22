@@ -1,6 +1,6 @@
 # Tesla SEI Visualizer 🏎️⚡
 
-A high-performance, client-side web application for visualizing and exporting Tesla dashcam telemetry.
+A high-performance, client-side web application for visualizing and exporting Tesla dashcam telemetry. All processing happens locally in your browser—no video/SEI data is uploaded.
 
 **Try it out now: [https://carter437.github.io/tesla-sei/](https://carter437.github.io/tesla-sei/)**
 
