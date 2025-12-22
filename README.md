@@ -4,8 +4,9 @@ A high-performance, client-side web application for visualizing and exporting Te
 
 **Try it out now: [https://carter437.github.io/tesla-sei/](https://carter437.github.io/tesla-sei/)**
 
-[![Tesla SEI Explorer Preview](./preview.png)](https://carter437.github.io/tesla-sei/)
 [![Tesla SEI Explorer Dashboard](./preview-v2.png)](https://carter437.github.io/tesla-sei/)
+[![Tesla SEI Explorer Preview](./preview.png)](https://carter437.github.io/tesla-sei/)
+
 
 
 ## 🌟 Overview
