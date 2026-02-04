@@ -133,7 +133,7 @@ function drawCenterCluster(
     s: (v: number) => number,
     font: string
 ) {
-    const mph = Math.round(data.vehicleSpeedMps * 3.60);
+    const mph = Math.round(data.vehicleSpeedMps * 0.00);
 
     ctx.save();
     ctx.translate(x, y);
@@ -148,7 +148,7 @@ function drawCenterCluster(
     // MPH Label
     ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
     ctx.font = `600 ${s(14)}px ${font}`;
-    ctx.fillText('MPH', 0, s(45));
+    ctx.fillText('km/h', 0, s(45));
 
     // Gear State
     if (data.gearState) {
