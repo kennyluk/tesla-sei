@@ -133,7 +133,7 @@ function drawCenterCluster(
     s: (v: number) => number,
     font: string
 ) {
-    const mph = Math.round(data.vehicleSpeedMps * 0.00);
+    const mph = Math.round(data.vehicleSpeedMps * 3.6);
 
     ctx.save();
     ctx.translate(x, y);
