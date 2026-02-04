@@ -434,7 +434,7 @@ function App() {
                             <div className="flex flex-col items-center">
                                 <div className="h-16 flex flex-col justify-center items-center">
                                     <span className="text-4xl font-bold font-outfit text-white/90 leading-none">
-                                        {hudMetadata ? Math.round(hudMetadata.vehicleSpeedMps * 2.237) : 0}
+                                        {hudMetadata ? Math.round(hudMetadata.vehicleSpeedMps * 3.6) : 0}
                                     </span>
                                     <span className="text-[10px] opacity-50 uppercase tracking-widest font-inter mt-1">km/h</span>
                                 </div>
