@@ -436,7 +436,7 @@ function App() {
                                     <span className="text-4xl font-bold font-outfit text-white/90 leading-none">
                                         {hudMetadata ? Math.round(hudMetadata.vehicleSpeedMps * 2.237) : 0}
                                     </span>
-                                    <span className="text-[10px] opacity-50 uppercase tracking-widest font-inter mt-1">mph</span>
+                                    <span className="text-[10px] opacity-50 uppercase tracking-widest font-inter mt-1">km/h</span>
                                 </div>
 
                                 <div className="mt-4 h-5 flex items-center justify-center">
